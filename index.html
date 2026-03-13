@@ -40,9 +40,17 @@ button.secondary{background:#e2e8f0;color:#0f172a}
 <div class="grid">
 
 <div class="card">
-<h2>Wortliste</h2>
+
+<div class="flex" style="justify-content:space-between;align-items:center">
+<h2 style="margin:0">Wortliste</h2>
+<button class="secondary" id="toggleList">Liste anzeigen</button>
+</div>
+
+<div id="listContainer" class="hidden" style="margin-top:10px">
 <p>Diese Liste ist bereits fest integriert. Du kannst sie optional anpassen.</p>
 <textarea id="wordList"></textarea>
+</div>
+
 </div>
 
 <div class="card">
@@ -107,77 +115,18 @@ button.secondary{background:#e2e8f0;color:#0f172a}
 
 <script>
 
-// FEST INTEGRIERTE STANDARD-WORTLISTE
 const DEFAULT_WORDS = [
-"Bäcker",
-"Rock",
-"Decke",
-"Brücke",
-"Stück",
-"glücklich",
-"Rücken",
-"dreckig",
-"schrecklich",
-"blicken",
-"Zucker",
-"spucken",
-"entdecken",
-"erschrecken",
-"stricken",
-"entwickeln",
-"Mücke",
-"dick",
-"zurück",
-"schmecken",
-"Beispiel",
-"Papier",
-"Tier",
-"Lied",
-"tief",
-"Tiefe",
-"gießen",
-"Biene",
-"Krieg",
-"schieben",
-"zielen",
-"Zwiebel",
-"nie",
-"niemals",
-"niemand",
-"kriechen",
-"verlieren",
-"lieb",
-"lieben",
-"riechen",
-"schießen",
-"schwierig",
-"schließlich",
-"Mütze",
-"Gesetz",
-"Hitze",
-"Spitze",
-"Pfütze",
-"Netz",
-"Blitz",
-"Witz",
-"Katze",
-"schützen",
-"putzen",
-"Schatz",
-"verletzen",
-"nützlich",
-"besetzt",
-"blitzen",
-"letzter",
-"zuletzt",
-"plötzlich",
-"schmutzig",
-"sitzen"
+"Bäcker","Rock","Decke","Brücke","Stück","glücklich","Rücken","dreckig","schrecklich","blicken",
+"Zucker","spucken","entdecken","erschrecken","stricken","entwickeln","Mücke","dick","zurück","schmecken",
+"Beispiel","Papier","Tier","Lied","tief","Tiefe","gießen","Biene","Krieg","schieben",
+"zielen","Zwiebel","nie","niemals","niemand","kriechen","verlieren","lieb","lieben","riechen",
+"schießen","schwierig","schließlich","Mütze","Gesetz","Hitze","Spitze","Pfütze","Netz","Blitz",
+"Witz","Katze","schützen","putzen","Schatz","verletzen","nützlich","besetzt","blitzen","letzter",
+"zuletzt","plötzlich","schmutzig","sitzen"
 ];
 
 const STORAGE_KEY = "lernwoerter_liste";
-
-const el = id => document.getElementById(id);
+const el=id=>document.getElementById(id);
 
 let words=[];
 let order=[];
@@ -185,7 +134,6 @@ let index=0;
 let correct=0;
 let attempts=0;
 let show=true;
-let mode="cards";
 
 function loadWords(){
 let saved=localStorage.getItem(STORAGE_KEY);
@@ -223,12 +171,11 @@ for(let i=order.length-1;i>0;i--){
 let j=Math.floor(Math.random()*(i+1));
 [order[i],order[j]]=[order[j],order[i]];
 }
-index=0;
-render();
+index=0;render();
 }
 
 function next(){
-if(!words.length) return;
+if(!words.length)return;
 index=(index+1)%words.length;
 show=true;
 el("answer").value="";
@@ -250,8 +197,7 @@ let w=current();
 let a=el("answer").value.trim().toLowerCase();
 attempts++;
 if(a===w.toLowerCase()){
-correct++;
-feedback("Richtig!","ok");
+correct++;feedback("Richtig!","ok");
 }else{
 feedback("Richtig wäre: "+w,"err");
 }
@@ -266,20 +212,34 @@ el("accuracy").textContent=q+"%";
 
 function render(){
 let total=words.length;
-let num=total ? index+1 : 0;
+let num=total?index+1:0;
 let p=total?num/total*100:0;
 
 el("progressText").textContent=num+" / "+total;
 el("progressBar").style.width=p+"%";
 
-el("cardCount").textContent=total ? "Wort "+num : "Keine Wörter";
-el("cardWord").textContent=total ? (show?current():"••••") : "Bitte Wörter eingeben";
+el("cardCount").textContent=total?"Wort "+num:"Keine Wörter";
+el("cardWord").textContent=total?(show?current():"••••"):"Bitte Wörter eingeben";
 
-el("writeCount").textContent=total ? "Wort "+num+" von "+total : "Keine Wörter";
+el("writeCount").textContent=total?"Wort "+num+" von "+total:"Keine Wörter";
 renderStats();
 }
 
-// EVENTS
+// Wortliste ein/ausblenden
+el("toggleList").onclick=()=>{
+let box=el("listContainer");
+let btn=el("toggleList");
+
+if(box.classList.contains("hidden")){
+box.classList.remove("hidden");
+btn.textContent="Liste verbergen";
+}else{
+box.classList.add("hidden");
+btn.textContent="Liste anzeigen";
+}
+};
+
+// Events
 el("wordList").addEventListener("input",updateWords);
 
 el("shuffle").onclick=shuffle;
@@ -300,19 +260,13 @@ if(e.key==="Enter")check();
 });
 
 el("modeCards").onclick=()=>{
-mode="cards";
 el("cards").classList.remove("hidden");
 el("write").classList.add("hidden");
-el("modeCards").classList.remove("secondary");
-el("modeWrite").classList.add("secondary");
 };
 
 el("modeWrite").onclick=()=>{
-mode="write";
 el("write").classList.remove("hidden");
 el("cards").classList.add("hidden");
-el("modeWrite").classList.remove("secondary");
-el("modeCards").classList.add("secondary");
 };
 
 loadWords();

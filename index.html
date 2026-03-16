@@ -134,39 +134,43 @@ let index=0;
 let correct=0;
 let attempts=0;
 let show=true;
+let hasChecked=false;
 
 function loadWords(){
 let saved=localStorage.getItem(STORAGE_KEY);
 if(saved){
 el("wordList").value=saved;
 }else{
-el("wordList").value=DEFAULT_WORDS.join("\n");
+el("wordList").value=DEFAULT_WORDS.join("
+");
 }
 updateWords();
 }
 
 function updateWords(){
-words=el("wordList").value.split("\n").map(w=>w.trim()).filter(Boolean);
+words=el("wordList").value.split("
+").map(w=>w.trim()).filter(Boolean);
 localStorage.setItem(STORAGE_KEY,el("wordList").value);
 order=[...Array(words.length).keys()];
 index=0;
 correct=0;
 attempts=0;
 show=true;
+hasChecked=false;
+el("answer").value="";
 render();
 }
 
 function current(){return words[order[index]]||""}
 
 let germanVoice = null;
-let isSpeaking = false;
+let isSpeaking=false;
 
 function loadGermanVoice(){
 const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
 if(!voices.length) return;
 
 germanVoice =
-voices.find(v => v.lang === "de-DE" && /anna|petra|markus|yannick/i.test(v.name)) ||
 voices.find(v => v.lang === "de-DE") ||
 voices.find(v => v.lang && v.lang.toLowerCase().startsWith("de")) ||
 null;
@@ -174,25 +178,23 @@ null;
 
 function speak(word){
 if(!("speechSynthesis" in window)) return;
-if(isSpeaking) return; // verhindern, dass mehrfach geklickt wird
+if(isSpeaking) return;
 
 loadGermanVoice();
 let u = new SpeechSynthesisUtterance(word);
 u.lang = germanVoice?.lang || "de-DE";
 if(germanVoice) u.voice = germanVoice;
 u.rate = 0.9;
-u.pitch = 1;
 
-isSpeaking = true;
+isSpeaking=true;
 
-// Buttons während des Sprechens deaktivieren
-el("speakCard").disabled = true;
-el("speakWrite").disabled = true;
+el("speakCard").disabled=true;
+el("speakWrite").disabled=true;
 
-u.onend = () => {
-  isSpeaking = false;
-  el("speakCard").disabled = false;
-  el("speakWrite").disabled = false;
+u.onend=()=>{
+isSpeaking=false;
+el("speakCard").disabled=false;
+el("speakWrite").disabled=false;
 };
 
 window.speechSynthesis.cancel();
@@ -208,13 +210,24 @@ for(let i=order.length-1;i>0;i--){
 let j=Math.floor(Math.random()*(i+1));
 [order[i],order[j]]=[order[j],order[i]];
 }
-index=0;render();
+index=0;
+hasChecked=false;
+el("answer").value="";
+render();
 }
 
 function next(){
 if(!words.length)return;
+
+// verhindert einfaches Weiterklicken
+if(!el("write").classList.contains("hidden") && !hasChecked){
+feedback("Bitte schreibe zuerst das Wort und klicke auf Prüfen.","err");
+return;
+}
+
 index=(index+1)%words.length;
 show=true;
+hasChecked=false;
 el("answer").value="";
 feedback("");
 render();
@@ -232,13 +245,29 @@ f.style.display="block";
 function check(){
 let w=current();
 let a=el("answer").value.trim().toLowerCase();
-attempts++;
-if(a===w.toLowerCase()){
-correct++;feedback("Richtig!","ok");
-}else{
-feedback("Richtig wäre: "+w,"err");
+
+if(!a){
+feedback("Bitte schreibe zuerst das Wort.","err");
+return;
 }
+
+// Statistik nur einmal pro Wort erhöhen
+if(!hasChecked){
+  attempts++;
+  if(a===w.toLowerCase()){
+    correct++;
+  }
+  hasChecked = true;
+}
+
+if(a===w.toLowerCase()){
+feedback("Richtig! Jetzt kannst du weiter klicken.","ok");
+}else{
+feedback("Richtig wäre: "+w+". Jetzt kannst du weiter klicken.","err");
+}
+
 renderStats();
+render();
 }
 
 function renderStats(){
@@ -304,6 +333,8 @@ el("write").classList.add("hidden");
 el("modeWrite").onclick=()=>{
 el("write").classList.remove("hidden");
 el("cards").classList.add("hidden");
+hasChecked=false;
+el("answer").value="";
 };
 
 loadWords();

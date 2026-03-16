@@ -158,12 +158,49 @@ render();
 
 function current(){return words[order[index]]||""}
 
+let germanVoice = null;
+let isSpeaking = false;
+
+function loadGermanVoice(){
+const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+if(!voices.length) return;
+
+germanVoice =
+voices.find(v => v.lang === "de-DE" && /anna|petra|markus|yannick/i.test(v.name)) ||
+voices.find(v => v.lang === "de-DE") ||
+voices.find(v => v.lang && v.lang.toLowerCase().startsWith("de")) ||
+null;
+}
+
 function speak(word){
-if(!("speechSynthesis" in window))return;
-let u=new SpeechSynthesisUtterance(word);
-u.lang="de-DE";
+if(!("speechSynthesis" in window)) return;
+if(isSpeaking) return; // verhindern, dass mehrfach geklickt wird
+
+loadGermanVoice();
+let u = new SpeechSynthesisUtterance(word);
+u.lang = germanVoice?.lang || "de-DE";
+if(germanVoice) u.voice = germanVoice;
+u.rate = 0.9;
+u.pitch = 1;
+
+isSpeaking = true;
+
+// Buttons während des Sprechens deaktivieren
+el("speakCard").disabled = true;
+el("speakWrite").disabled = true;
+
+u.onend = () => {
+  isSpeaking = false;
+  el("speakCard").disabled = false;
+  el("speakWrite").disabled = false;
+};
+
 window.speechSynthesis.cancel();
 window.speechSynthesis.speak(u);
+}
+
+if("speechSynthesis" in window){
+window.speechSynthesis.onvoiceschanged = loadGermanVoice;
 }
 
 function shuffle(){
